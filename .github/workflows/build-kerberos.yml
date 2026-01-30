@@ -49,6 +49,8 @@ jobs:
           if (Test-Path $packageJsonPath) {
             $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
             if ($packageJson.binary -and $packageJson.binary.napi_versions -and $packageJson.binary.napi_versions.Count -gt 0) {
+              # Use the first NAPI version from the array. For packages that list multiple versions,
+              # this is typically the minimum supported version, which ensures maximum compatibility.
               $napiVersion = $packageJson.binary.napi_versions[0]
               Write-Host "Detected NAPI version: $napiVersion"
               echo "version=$napiVersion" >> $env:GITHUB_OUTPUT
@@ -63,6 +65,7 @@ jobs:
         shell: pwsh
 
       - name: Find and copy kerberos.node
+        id: copy
         run: |
           $kerberosNodes = Get-ChildItem -Path "node_modules" -Recurse -Filter "kerberos.node"
           Write-Host "Found $($kerberosNodes.Count) kerberos.node file(s)"
@@ -83,14 +86,19 @@ jobs:
 
           Write-Host "Selected kerberos.node at: $($kerberosNode.FullName)"
           Write-Host "File size: $($kerberosNode.Length) bytes"
+          
+          # Construct the output filename once and store it for reuse
           $outputFile = "kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node"
           Copy-Item $kerberosNode.FullName -Destination $outputFile
           Write-Host "Copied to: $outputFile"
+          
+          # Store filename in output for use in subsequent steps
+          echo "filename=$outputFile" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Verify file
         run: |
-          $outputFile = "kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node"
+          $outputFile = "${{ steps.copy.outputs.filename }}"
           if (Test-Path $outputFile) {
             $fileInfo = Get-Item $outputFile
             Write-Host "File size: $($fileInfo.Length) bytes"
@@ -114,8 +122,8 @@ jobs:
             - NAPI version: ${{ steps.napi.outputs.version }}
 
             ## Installation
-            Download the `kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node` file and place it in your project's appropriate location.
-          files: kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node
+            Download the `${{ steps.copy.outputs.filename }}` file and place it in your project's appropriate location.
+          files: ${{ steps.copy.outputs.filename }}
           fail_on_unmatched_files: true
           draft: false
           prerelease: false

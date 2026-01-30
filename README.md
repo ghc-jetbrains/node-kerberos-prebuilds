@@ -30,7 +30,7 @@ The workflow will:
 Running the workflow with kerberos version `2.2.0` and Node.js version `22` creates:
 - **Release**: `v2.2.0`
 - **Tag**: `v2.2.0-win-arm64-node22`
-- **Asset**: `kerberos-v2.2.0-napi-v4-win32-arm64.node` (NAPI version is auto-detected from the kerberos package)
+- **Asset**: `kerberos-v2.2.0-napi-v{N}-win32-arm64.node` (where `{N}` is the NAPI version auto-detected from the kerberos package, e.g., `v4`)
 
 ## Using Prebuilt Binaries
 
