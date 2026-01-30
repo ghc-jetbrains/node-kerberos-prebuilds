@@ -14,10 +14,7 @@ on:
 
 jobs:
   build-windows-arm:
-    # Note: GitHub-hosted runners do not currently support Windows ARM64.
-    # This workflow assumes a self-hosted Windows ARM64 runner is configured.
-    # Alternatively, you can modify this to use cross-compilation.
-    runs-on: [self-hosted, windows, ARM64]
+    runs-on: windows-11-arm
     permissions:
       contents: write
 
