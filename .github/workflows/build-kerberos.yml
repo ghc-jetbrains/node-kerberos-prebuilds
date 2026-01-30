@@ -1,0 +1,88 @@
+name: Build Kerberos Prebuilds
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Kerberos version to build (e.g., 2.2.0)'
+        required: true
+        default: '2.2.0'
+      node_version:
+        description: 'Node.js version to use (>=22)'
+        required: true
+        default: '22'
+
+jobs:
+  build-windows-arm:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ github.event.inputs.node_version }}
+          architecture: 'arm64'
+
+      - name: Install Kerberos
+        run: |
+          npm install kerberos@${{ github.event.inputs.version }}
+        shell: pwsh
+
+      - name: Find and copy kerberos.node
+        run: |
+          $kerberosNode = Get-ChildItem -Path "node_modules" -Recurse -Filter "kerberos.node" | Select-Object -First 1
+          if ($kerberosNode) {
+            Write-Host "Found kerberos.node at: $($kerberosNode.FullName)"
+            Copy-Item $kerberosNode.FullName -Destination "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
+            Write-Host "Copied to: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
+          } else {
+            Write-Error "kerberos.node not found!"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Verify file
+        run: |
+          if (Test-Path "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node") {
+            $fileInfo = Get-Item "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
+            Write-Host "File size: $($fileInfo.Length) bytes"
+          } else {
+            Write-Error "Output file not found!"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}-win-arm64-node${{ github.event.inputs.node_version }}
+          release_name: Kerberos ${{ github.event.inputs.version }} - Windows ARM64 - Node ${{ github.event.inputs.node_version }}
+          draft: false
+          prerelease: false
+          body: |
+            Kerberos prebuilt binary for Windows ARM64
+            
+            - Kerberos version: ${{ github.event.inputs.version }}
+            - Platform: Windows ARM64
+            - Node.js version: ${{ github.event.inputs.node_version }}
+            
+            ## Installation
+            Download the `kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node` file and place it in your project's appropriate location.
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node
+          asset_name: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node
+          asset_content_type: application/octet-stream
