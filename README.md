@@ -20,16 +20,17 @@ This repository provides a GitHub Actions workflow to build kerberos prebuilds o
 
 The workflow will:
 - Install the specified kerberos version via npm
+- Detect the Node-API (NAPI) version from the kerberos package
 - Extract the `kerberos.node` native addon
 - Create a GitHub release named `v{version}` (e.g., `v2.2.0`)
-- Upload the prebuilt binary as `kerberos-v{version}-win32-arm64.node`
+- Upload the prebuilt binary as `kerberos-v{version}-napi-v{napiVersion}-win32-arm64.node`
 
 ### Example
 
 Running the workflow with kerberos version `2.2.0` and Node.js version `22` creates:
 - **Release**: `v2.2.0`
 - **Tag**: `v2.2.0-win-arm64-node22`
-- **Asset**: `kerberos-v2.2.0-win32-arm64.node`
+- **Asset**: `kerberos-v2.2.0-napi-v{N}-win32-arm64.node` (where `{N}` is the NAPI version auto-detected from the kerberos package, e.g., `v4`)
 
 ## Using Prebuilt Binaries
 
