@@ -49,11 +49,18 @@ jobs:
           if (Test-Path $packageJsonPath) {
             $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
             if ($packageJson.binary -and $packageJson.binary.napi_versions -and $packageJson.binary.napi_versions.Count -gt 0) {
-              # Use the first NAPI version from the array. For packages that list multiple versions,
-              # this is typically the minimum supported version, which ensures maximum compatibility.
+              # Use the first NAPI version from the array as specified in the package.
+              # This is the version that the kerberos package was built with.
               $napiVersion = $packageJson.binary.napi_versions[0]
-              Write-Host "Detected NAPI version: $napiVersion"
-              echo "version=$napiVersion" >> $env:GITHUB_OUTPUT
+              
+              # Validate that the NAPI version is a valid positive integer
+              if ($napiVersion -match '^\d+$' -and [int]$napiVersion -gt 0) {
+                Write-Host "Detected NAPI version: $napiVersion"
+                echo "version=$napiVersion" >> $env:GITHUB_OUTPUT
+              } else {
+                Write-Error "Invalid NAPI version detected: $napiVersion"
+                exit 1
+              }
             } else {
               Write-Error "NAPI version not found in kerberos package.json"
               exit 1
