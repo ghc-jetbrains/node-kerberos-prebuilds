@@ -42,6 +42,26 @@ jobs:
           npm install kerberos@${{ github.event.inputs.version }}
         shell: pwsh
 
+      - name: Detect NAPI version
+        id: napi
+        run: |
+          $packageJsonPath = "node_modules/kerberos/package.json"
+          if (Test-Path $packageJsonPath) {
+            $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
+            if ($packageJson.binary -and $packageJson.binary.napi_versions) {
+              $napiVersion = $packageJson.binary.napi_versions[0]
+              Write-Host "Detected NAPI version: $napiVersion"
+              echo "version=$napiVersion" >> $env:GITHUB_OUTPUT
+            } else {
+              Write-Error "NAPI version not found in kerberos package.json"
+              exit 1
+            }
+          } else {
+            Write-Error "kerberos package.json not found!"
+            exit 1
+          }
+        shell: pwsh
+
       - name: Find and copy kerberos.node
         run: |
           $kerberosNodes = Get-ChildItem -Path "node_modules" -Recurse -Filter "kerberos.node"
@@ -63,14 +83,16 @@ jobs:
 
           Write-Host "Selected kerberos.node at: $($kerberosNode.FullName)"
           Write-Host "File size: $($kerberosNode.Length) bytes"
-          Copy-Item $kerberosNode.FullName -Destination "kerberos-v${{ github.event.inputs.version }}-win32-arm64.node"
-          Write-Host "Copied to: kerberos-v${{ github.event.inputs.version }}-win32-arm64.node"
+          $outputFile = "kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node"
+          Copy-Item $kerberosNode.FullName -Destination $outputFile
+          Write-Host "Copied to: $outputFile"
         shell: pwsh
 
       - name: Verify file
         run: |
-          if (Test-Path "kerberos-v${{ github.event.inputs.version }}-win32-arm64.node") {
-            $fileInfo = Get-Item "kerberos-v${{ github.event.inputs.version }}-win32-arm64.node"
+          $outputFile = "kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node"
+          if (Test-Path $outputFile) {
+            $fileInfo = Get-Item $outputFile
             Write-Host "File size: $($fileInfo.Length) bytes"
           } else {
             Write-Error "Output file not found!"
@@ -89,10 +111,11 @@ jobs:
             - Kerberos version: ${{ github.event.inputs.version }}
             - Platform: Windows ARM64
             - Node.js version: ${{ github.event.inputs.node_version }}
+            - NAPI version: ${{ steps.napi.outputs.version }}
 
             ## Installation
-            Download the `kerberos-v${{ github.event.inputs.version }}-win32-arm64.node` file and place it in your project's appropriate location.
-          files: kerberos-v${{ github.event.inputs.version }}-win32-arm64.node
+            Download the `kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node` file and place it in your project's appropriate location.
+          files: kerberos-v${{ github.event.inputs.version }}-napi-v${{ steps.napi.outputs.version }}-win32-arm64.node
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
