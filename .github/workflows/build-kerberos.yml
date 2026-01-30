@@ -25,6 +25,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate Node.js version
+        run: |
+          $nodeVersion = [int]"${{ github.event.inputs.node_version }}"
+          if ($nodeVersion -lt 22) {
+            Write-Error "Node.js version must be >= 22. Provided: $nodeVersion"
+            exit 1
+          }
+          Write-Host "Node.js version validation passed: $nodeVersion"
+        shell: pwsh
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -37,15 +47,27 @@ jobs:
 
       - name: Find and copy kerberos.node
         run: |
-          $kerberosNode = Get-ChildItem -Path "node_modules" -Recurse -Filter "kerberos.node" | Select-Object -First 1
-          if ($kerberosNode) {
-            Write-Host "Found kerberos.node at: $($kerberosNode.FullName)"
-            Copy-Item $kerberosNode.FullName -Destination "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
-            Write-Host "Copied to: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
-          } else {
+          $kerberosNodes = Get-ChildItem -Path "node_modules" -Recurse -Filter "kerberos.node"
+          Write-Host "Found $($kerberosNodes.Count) kerberos.node file(s)"
+
+          if ($kerberosNodes.Count -eq 0) {
             Write-Error "kerberos.node not found!"
             exit 1
           }
+
+          if ($kerberosNodes.Count -gt 1) {
+            Write-Host "Multiple kerberos.node files found:"
+            $kerberosNodes | ForEach-Object { Write-Host "  - $($_.FullName)" }
+            Write-Host "Using the first one found (largest file size)"
+            $kerberosNode = $kerberosNodes | Sort-Object Length -Descending | Select-Object -First 1
+          } else {
+            $kerberosNode = $kerberosNodes[0]
+          }
+
+          Write-Host "Selected kerberos.node at: $($kerberosNode.FullName)"
+          Write-Host "File size: $($kerberosNode.Length) bytes"
+          Copy-Item $kerberosNode.FullName -Destination "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
+          Write-Host "Copied to: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
         shell: pwsh
 
       - name: Verify file
@@ -59,16 +81,11 @@ jobs:
           }
         shell: pwsh
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}-win-arm64-node${{ github.event.inputs.node_version }}
-          release_name: Kerberos ${{ github.event.inputs.version }} - Windows ARM64 - Node ${{ github.event.inputs.node_version }}
-          draft: false
-          prerelease: false
+          name: Kerberos v${{ github.event.inputs.version }} - Windows ARM64 - Node ${{ github.event.inputs.node_version }}
           body: |
             Kerberos prebuilt binary for Windows ARM64
 
@@ -78,13 +95,9 @@ jobs:
 
             ## Installation
             Download the `kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node` file and place it in your project's appropriate location.
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+          files: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node
-          asset_name: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node
-          asset_content_type: application/octet-stream
