@@ -48,7 +48,7 @@ jobs:
           $packageJsonPath = "node_modules/kerberos/package.json"
           if (Test-Path $packageJsonPath) {
             $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
-            if ($packageJson.binary -and $packageJson.binary.napi_versions) {
+            if ($packageJson.binary -and $packageJson.binary.napi_versions -and $packageJson.binary.napi_versions.Count -gt 0) {
               $napiVersion = $packageJson.binary.napi_versions[0]
               Write-Host "Detected NAPI version: $napiVersion"
               echo "version=$napiVersion" >> $env:GITHUB_OUTPUT
