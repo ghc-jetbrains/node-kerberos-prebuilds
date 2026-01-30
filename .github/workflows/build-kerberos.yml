@@ -82,7 +82,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}-win-arm64-node${{ github.event.inputs.node_version }}
-          name: Kerberos v${{ github.event.inputs.version }} - Windows ARM64 - Node ${{ github.event.inputs.node_version }}
+          name: v${{ github.event.inputs.version }}
           body: |
             Kerberos prebuilt binary for Windows ARM64
 
