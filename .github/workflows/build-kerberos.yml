@@ -63,14 +63,14 @@ jobs:
 
           Write-Host "Selected kerberos.node at: $($kerberosNode.FullName)"
           Write-Host "File size: $($kerberosNode.Length) bytes"
-          Copy-Item $kerberosNode.FullName -Destination "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
-          Write-Host "Copied to: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
+          Copy-Item $kerberosNode.FullName -Destination "kerberos-v${{ github.event.inputs.version }}-win32-arm64.node"
+          Write-Host "Copied to: kerberos-v${{ github.event.inputs.version }}-win32-arm64.node"
         shell: pwsh
 
       - name: Verify file
         run: |
-          if (Test-Path "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node") {
-            $fileInfo = Get-Item "kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node"
+          if (Test-Path "kerberos-v${{ github.event.inputs.version }}-win32-arm64.node") {
+            $fileInfo = Get-Item "kerberos-v${{ github.event.inputs.version }}-win32-arm64.node"
             Write-Host "File size: $($fileInfo.Length) bytes"
           } else {
             Write-Error "Output file not found!"
@@ -91,8 +91,8 @@ jobs:
             - Node.js version: ${{ github.event.inputs.node_version }}
 
             ## Installation
-            Download the `kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node` file and place it in your project's appropriate location.
-          files: kerberos-win-arm64-node${{ github.event.inputs.node_version }}.node
+            Download the `kerberos-v${{ github.event.inputs.version }}-win32-arm64.node` file and place it in your project's appropriate location.
+          files: kerberos-v${{ github.event.inputs.version }}-win32-arm64.node
           fail_on_unmatched_files: true
           draft: false
           prerelease: false

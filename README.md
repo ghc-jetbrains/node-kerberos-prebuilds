@@ -22,14 +22,14 @@ The workflow will:
 - Install the specified kerberos version via npm
 - Extract the `kerberos.node` native addon
 - Create a GitHub release named `v{version}` (e.g., `v2.2.0`)
-- Upload the prebuilt binary as `kerberos-win-arm64-node{node_version}.node`
+- Upload the prebuilt binary as `kerberos-v{version}-win32-arm64.node`
 
 ### Example
 
 Running the workflow with kerberos version `2.2.0` and Node.js version `22` creates:
 - **Release**: `v2.2.0`
 - **Tag**: `v2.2.0-win-arm64-node22`
-- **Asset**: `kerberos-win-arm64-node22.node`
+- **Asset**: `kerberos-v2.2.0-win32-arm64.node`
 
 ## Using Prebuilt Binaries
 
