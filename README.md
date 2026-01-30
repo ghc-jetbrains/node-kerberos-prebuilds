@@ -34,4 +34,6 @@ After the workflow completes, you can download the prebuilt binary from the Rele
 ## Requirements
 
 - Node.js >= 22
-- Windows ARM64 runner (for builds)
+- Windows ARM64 self-hosted runner (GitHub-hosted runners do not currently support Windows ARM64)
+  - To set up a self-hosted runner, see [GitHub's documentation](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners)
+  - The runner should be tagged with: `self-hosted`, `windows`, `ARM64`
